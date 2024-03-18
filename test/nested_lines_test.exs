@@ -65,8 +65,28 @@ defmodule NestedLinesTest do
 
     test "fail if starting_number less than 1" do
       lines = %NestedLines{lines: [[1], [0, 1], [1]]}
+
       assert_raise FunctionClauseError, fn ->
-        ["10", "10.1", "11"] = NestedLines.line_numbers(lines, 0)
+        NestedLines.line_numbers(lines, 0)
+      end
+    end
+  end
+
+  describe "indent lines" do
+    test "indent one level" do
+      lines = %NestedLines{lines: [[1], [1], [1]]}
+      assert %NestedLines{lines: [[1], [0, 1], [1]]} = NestedLines.indent!(lines, 2)
+    end
+
+    test "indent two levels" do
+      lines = %NestedLines{lines: [[1], [0, 1], [0, 1]]}
+      assert %NestedLines{lines: [[1], [0, 1], [0, 0, 1]]} = NestedLines.indent!(lines, 3)
+    end
+
+    test "cannot indent further than two levels" do
+      lines = %NestedLines{lines: [[1], [0, 1], [0, 1]]}
+      assert_raise ArgumentError, fn ->
+        NestedLines.indent!(lines, 2)
       end
     end
   end

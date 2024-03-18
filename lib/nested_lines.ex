@@ -79,4 +79,58 @@ defmodule NestedLines do
   end
 
   defp join_line_numbers(line_numbers), do: Enum.map(line_numbers, &Enum.join(&1, "."))
+
+  @doc """
+  Returns true if the line can be indented, false otherwise. Lines are 1-indexed.
+
+  ## Examples
+
+      iex> %NestedLines{lines: [[1], [0, 1], [0, 1]]} |> NestedLines.can_indent?(1)
+      false
+
+      iex> %NestedLines{lines: [[1], [0, 1], [0, 1]]} |> NestedLines.can_indent?(3)
+      true
+
+  """
+  @spec can_indent?(t, pos_integer()) :: boolean()
+  def can_indent?(%__MODULE__{lines: lines}, position) when is_integer(position) and position > 0 do
+    lines
+    |> Enum.slice(position - 2, 2)
+    |> can_indent?()
+  end
+
+  defp can_indent?([prev, next]) when length(prev) >= length(next), do: true
+  defp can_indent?(_), do: false
+
+  @doc """
+  Indents a line based on its index, raises if the line cannot be indented. Lines are 1-indexed.
+
+  ## Examples
+
+      iex> %NestedLines{lines: [[1], [1], [0, 1], [1]]} |> NestedLines.indent!(4)
+      %NestedLines{lines: [[1], [1], [0, 1], [0, 1]]}
+
+  """
+  @spec indent!(t, pos_integer()) :: t
+  def indent!(%__MODULE__{lines: lines} = nested_lines, position) when is_integer(position) and position > 0 do
+    case can_indent?(nested_lines, position) do
+      true -> do_indent(lines, position - 1)
+      false -> raise(ArgumentError, "cannot indent line at #{position}")
+    end
+  end
+
+  defp do_indent(lines, position) do
+    {_count, lines_with_indent} =
+      Enum.reduce(lines, {0, []}, fn line, {count, line_list} ->
+        cond do
+          count == position ->
+            {count + 1, line_list ++ [[0 | line]]}
+
+          true ->
+            {count + 1, line_list ++ [line]}
+        end
+      end)
+
+    %__MODULE__{lines: lines_with_indent}
+  end
 end
