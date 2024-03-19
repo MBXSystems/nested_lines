@@ -37,6 +37,6 @@ With a `%NestedLines{}` stuct, you can then output the line numbers using `Neste
 
 ### TODO
 
-* Indent/outdent lines
+* Move child lines when indenting/outdenting
 * Move lines between siblings
 * Move lines anywhere?

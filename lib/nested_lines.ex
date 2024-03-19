@@ -133,4 +133,38 @@ defmodule NestedLines do
 
     %__MODULE__{lines: lines_with_indent}
   end
+
+  def can_outdent?(%__MODULE__{lines: lines}, position) when is_integer(position) and position > 0 do
+    lines
+    |> Enum.slice(position - 1, 2)
+    |> can_outdent?()
+  end
+
+  defp can_outdent?([_current, [1]]), do: false
+  defp can_outdent?([current, next]) when current == next, do: true
+  defp can_outdent?([list]) when length(list) > 1, do: true
+  defp can_outdent?(_), do: false
+
+  def outdent!(%__MODULE__{lines: lines} = nested_lines, position) when is_integer(position) and position > 0 do
+    case can_outdent?(nested_lines, position) do
+      true -> do_outdent(lines, position - 1)
+      false -> raise(ArgumentError, "cannot outdent line at #{position}")
+    end
+  end
+
+  defp do_outdent(lines, position) do
+    {_count, lines_with_outdent} =
+      Enum.reduce(lines, {0, []}, fn line, {count, line_list} ->
+        cond do
+          count == position ->
+            [0 | outdented_line] = line
+            {count + 1, line_list ++ [outdented_line]}
+
+          true ->
+            {count + 1, line_list ++ [line]}
+        end
+      end)
+
+    %__MODULE__{lines: lines_with_outdent}
+  end
 end

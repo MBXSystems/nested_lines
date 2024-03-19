@@ -90,4 +90,30 @@ defmodule NestedLinesTest do
       end
     end
   end
+
+  describe "outdent lines" do
+    test "outdent one level" do
+      lines = %NestedLines{lines: [[1], [0, 1], [0, 1]]}
+      assert %NestedLines{lines: [[1], [0, 1], [1]]} = NestedLines.outdent!(lines, 3)
+    end
+
+    test "outdent two levels" do
+      lines = %NestedLines{lines: [[1], [0, 1], [0, 0, 1]]}
+      assert %NestedLines{lines: [[1], [0, 1], [0, 1]]} = NestedLines.outdent!(lines, 3)
+    end
+
+    test "cannot outdent beyond top-level" do
+      lines = %NestedLines{lines: [[1], [0, 1], [0, 0, 1]]}
+      assert_raise ArgumentError, fn ->
+        NestedLines.outdent!(lines, 1)
+      end
+    end
+
+    test "cannot outdent with child" do
+      lines = %NestedLines{lines: [[1], [0, 1], [0, 0, 1]]}
+      assert_raise ArgumentError, fn ->
+        NestedLines.outdent!(lines, 2)
+      end
+    end
+  end
 end
