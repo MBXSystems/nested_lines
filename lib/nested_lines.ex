@@ -112,7 +112,8 @@ defmodule NestedLines do
 
   """
   @spec indent!(t, pos_integer()) :: t
-  def indent!(%__MODULE__{lines: lines} = nested_lines, position) when is_integer(position) and position > 0 do
+  def indent!(%__MODULE__{lines: lines} = nested_lines, position)
+      when is_integer(position) and position > 0 do
     case can_indent?(nested_lines, position) do
       true -> do_indent(lines, position - 1)
       false -> raise(ArgumentError, "cannot indent line at #{position}")
@@ -122,19 +123,18 @@ defmodule NestedLines do
   defp do_indent(lines, position) do
     {_count, lines_with_indent} =
       Enum.reduce(lines, {0, []}, fn line, {count, line_list} ->
-        cond do
-          count == position ->
-            {count + 1, line_list ++ [[0 | line]]}
-
-          true ->
-            {count + 1, line_list ++ [line]}
+        if count == position do
+          {count + 1, line_list ++ [[0 | line]]}
+        else
+          {count + 1, line_list ++ [line]}
         end
       end)
 
     %__MODULE__{lines: lines_with_indent}
   end
 
-  def can_outdent?(%__MODULE__{lines: lines}, position) when is_integer(position) and position > 0 do
+  def can_outdent?(%__MODULE__{lines: lines}, position)
+      when is_integer(position) and position > 0 do
     lines
     |> Enum.slice(position - 1, 2)
     |> can_outdent?()
@@ -145,7 +145,8 @@ defmodule NestedLines do
   defp can_outdent?([list]) when length(list) > 1, do: true
   defp can_outdent?(_), do: false
 
-  def outdent!(%__MODULE__{lines: lines} = nested_lines, position) when is_integer(position) and position > 0 do
+  def outdent!(%__MODULE__{lines: lines} = nested_lines, position)
+      when is_integer(position) and position > 0 do
     case can_outdent?(nested_lines, position) do
       true -> do_outdent(lines, position - 1)
       false -> raise(ArgumentError, "cannot outdent line at #{position}")
@@ -155,13 +156,11 @@ defmodule NestedLines do
   defp do_outdent(lines, position) do
     {_count, lines_with_outdent} =
       Enum.reduce(lines, {0, []}, fn line, {count, line_list} ->
-        cond do
-          count == position ->
-            [0 | outdented_line] = line
-            {count + 1, line_list ++ [outdented_line]}
-
-          true ->
-            {count + 1, line_list ++ [line]}
+        if count == position do
+          [0 | outdented_line] = line
+          {count + 1, line_list ++ [outdented_line]}
+        else
+          {count + 1, line_list ++ [line]}
         end
       end)
 
