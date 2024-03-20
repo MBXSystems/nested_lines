@@ -89,6 +89,11 @@ defmodule NestedLinesTest do
         NestedLines.indent!(lines, 2)
       end
     end
+
+    test "indent with child" do
+      lines = %NestedLines{lines: [[1], [1], [0, 1]]}
+      assert %NestedLines{lines: [[1], [0, 1], [0, 0, 1]]} = NestedLines.indent!(lines, 2)
+    end
   end
 
   describe "outdent lines" do
@@ -109,11 +114,9 @@ defmodule NestedLinesTest do
       end
     end
 
-    test "cannot outdent with child" do
+    test "outdent with child" do
       lines = %NestedLines{lines: [[1], [0, 1], [0, 0, 1]]}
-      assert_raise ArgumentError, fn ->
-        NestedLines.outdent!(lines, 2)
-      end
+      assert %NestedLines{lines: [[1], [1], [0, 1]]} = NestedLines.outdent!(lines, 2)
     end
   end
 end

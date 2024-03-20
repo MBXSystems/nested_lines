@@ -93,7 +93,8 @@ defmodule NestedLines do
 
   """
   @spec can_indent?(t, pos_integer()) :: boolean()
-  def can_indent?(%__MODULE__{lines: lines}, position) when is_integer(position) and position > 0 do
+  def can_indent?(%__MODULE__{lines: lines}, position)
+      when is_integer(position) and position > 0 do
     lines
     |> Enum.slice(position - 2, 2)
     |> can_indent?()
@@ -103,7 +104,7 @@ defmodule NestedLines do
   defp can_indent?(_), do: false
 
   @doc """
-  Indents a line based on its index, raises if the line cannot be indented. Lines are 1-indexed.
+  Indents a line based on its index, raises if the line cannot be indented. Child lines are also indented by one position. Lines are 1-indexed.
 
   ## Examples
 
@@ -115,24 +116,39 @@ defmodule NestedLines do
   def indent!(%__MODULE__{lines: lines} = nested_lines, position)
       when is_integer(position) and position > 0 do
     case can_indent?(nested_lines, position) do
-      true -> do_indent(lines, position - 1)
+      true -> do_indent(lines, position)
       false -> raise(ArgumentError, "cannot indent line at #{position}")
     end
   end
 
   defp do_indent(lines, position) do
-    {_count, lines_with_indent} =
-      Enum.reduce(lines, {0, []}, fn line, {count, line_list} ->
-        if count == position do
-          {count + 1, line_list ++ [[0 | line]]}
-        else
-          {count + 1, line_list ++ [line]}
-        end
-      end)
+    # split the lines into three parts: front, back, and the line to be indented
+    {front, [line_item | rest]} = Enum.split(lines, position - 1)
 
-    %__MODULE__{lines: lines_with_indent}
+    {child_lines, back} = split_child_lines(rest, length(line_item))
+
+    updated_lines =
+      [line_item | child_lines]
+      |> indent_lines()
+      |> then(fn indented_lines -> [front, indented_lines, back] end)
+      |> Enum.concat()
+
+    %__MODULE__{lines: updated_lines}
   end
 
+  @doc """
+  Returns true if the line can be outdented, false otherwise. Lines are 1-indexed.
+
+  ## Examples
+
+      iex> %NestedLines{lines: [[1], [0, 1], [0, 0, 1]]} |> NestedLines.can_outdent?(2)
+      true
+
+      iex> %NestedLines{lines: [[1], [0, 1], [1]]} |> NestedLines.can_outdent?(3)
+      false
+
+  """
+  @spec can_outdent?(t, pos_integer()) :: boolean()
   def can_outdent?(%__MODULE__{lines: lines}, position)
       when is_integer(position) and position > 0 do
     lines
@@ -140,30 +156,49 @@ defmodule NestedLines do
     |> can_outdent?()
   end
 
-  defp can_outdent?([_current, [1]]), do: false
-  defp can_outdent?([current, next]) when current == next, do: true
+  defp can_outdent?([[1], _next]), do: false
+  defp can_outdent?([current, next]) when length(current) <= length(next), do: true
   defp can_outdent?([list]) when length(list) > 1, do: true
   defp can_outdent?(_), do: false
 
+  @doc """
+  Outdents a line based on its index, raises if the line cannot be outdented. Child lines are also outdented by one position. Lines are 1-indexed.
+
+  ## Examples
+
+      iex> %NestedLines{lines: [[1], [1], [0, 1], [0, 0, 1]]} |> NestedLines.outdent!(3)
+      %NestedLines{lines: [[1], [1], [1], [0, 1]]}
+
+  """
   def outdent!(%__MODULE__{lines: lines} = nested_lines, position)
       when is_integer(position) and position > 0 do
     case can_outdent?(nested_lines, position) do
-      true -> do_outdent(lines, position - 1)
+      true -> do_outdent(lines, position)
       false -> raise(ArgumentError, "cannot outdent line at #{position}")
     end
   end
 
   defp do_outdent(lines, position) do
-    {_count, lines_with_outdent} =
-      Enum.reduce(lines, {0, []}, fn line, {count, line_list} ->
-        if count == position do
-          [0 | outdented_line] = line
-          {count + 1, line_list ++ [outdented_line]}
-        else
-          {count + 1, line_list ++ [line]}
-        end
-      end)
+    # split the lines into three parts: front, back, and the line to be outdented
+    {front, [line_item | rest]} = Enum.split(lines, position - 1)
 
-    %__MODULE__{lines: lines_with_outdent}
+    {child_lines, back} = split_child_lines(rest, length(line_item))
+
+    updated_lines =
+      [line_item | child_lines]
+      |> outdent_lines()
+      |> then(fn outdented_lines ->
+        [front, outdented_lines, back]
+      end)
+      |> Enum.concat()
+
+    %__MODULE__{lines: updated_lines}
   end
+
+  defp split_child_lines(lines, parent_length) do
+    Enum.split_while(lines, fn line -> length(line) > parent_length end)
+  end
+
+  defp outdent_lines(lines), do: Enum.map(lines, fn [0 | line] -> line end)
+  defp indent_lines(lines), do: Enum.map(lines, &[0 | &1])
 end
