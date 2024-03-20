@@ -13,17 +13,17 @@ defmodule NestedLinesTest do
   end
 
   describe "parsing string values" do
-    test "[\"1\"] returns [[1]]" do
+    test "~W(1) returns [[1]]" do
       input = NestedLines.new!(["1"])
       assert %NestedLines{lines: [[1]]} = input
     end
 
-    test "[\"1\", \"2\"] returns [[1], [1]]" do
+    test "~W(1 2) returns [[1], [1]]" do
       input = NestedLines.new!(["1", "2"])
       assert %NestedLines{lines: [[1], [1]]} = input
     end
 
-    test "[\"1\", \"1.1\", \"1.2\"] returns [[1], [0, 1], [0, 1]]" do
+    test "~W(1 1.1 1.2) returns [[1], [0, 1], [0, 1]]" do
       input = NestedLines.new!(["1", "1.1", "1.2"])
       assert %NestedLines{lines: [[1], [0, 1], [0, 1]]} = input
     end
@@ -85,6 +85,7 @@ defmodule NestedLinesTest do
 
     test "cannot indent further than two levels" do
       lines = %NestedLines{lines: [[1], [0, 1], [0, 1]]}
+
       assert_raise ArgumentError, fn ->
         NestedLines.indent!(lines, 2)
       end
@@ -109,6 +110,7 @@ defmodule NestedLinesTest do
 
     test "cannot outdent beyond top-level" do
       lines = %NestedLines{lines: [[1], [0, 1], [0, 0, 1]]}
+
       assert_raise ArgumentError, fn ->
         NestedLines.outdent!(lines, 1)
       end

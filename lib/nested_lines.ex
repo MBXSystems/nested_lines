@@ -104,7 +104,8 @@ defmodule NestedLines do
   defp can_indent?(_), do: false
 
   @doc """
-  Indents a line based on its index, raises if the line cannot be indented. Child lines are also indented by one position. Lines are 1-indexed.
+  Indents a line based on its index, raises if the line cannot be indented.
+  Child lines are also indented by one position. Lines are 1-indexed.
 
   ## Examples
 
@@ -162,7 +163,8 @@ defmodule NestedLines do
   defp can_outdent?(_), do: false
 
   @doc """
-  Outdents a line based on its index, raises if the line cannot be outdented. Child lines are also outdented by one position. Lines are 1-indexed.
+  Outdents a line based on its index, raises if the line cannot be outdented.
+  Child lines are also outdented by one position. Lines are 1-indexed.
 
   ## Examples
 
