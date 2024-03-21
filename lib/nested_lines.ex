@@ -148,6 +148,9 @@ defmodule NestedLines do
       iex> %NestedLines{lines: [[1], [0, 1], [1]]} |> NestedLines.can_outdent?(3)
       false
 
+      iex> %NestedLines{lines: [[1], [1], [0, 1], [1]]} |> NestedLines.can_outdent?(3)
+      true
+
   """
   @spec can_outdent?(t, pos_integer()) :: boolean()
   def can_outdent?(%__MODULE__{lines: lines}, position)
@@ -158,9 +161,8 @@ defmodule NestedLines do
   end
 
   defp can_outdent?([[1], _next]), do: false
-  defp can_outdent?([current, next]) when length(current) <= length(next), do: true
-  defp can_outdent?([list]) when length(list) > 1, do: true
-  defp can_outdent?(_), do: false
+  defp can_outdent?([[1]]), do: false
+  defp can_outdent?(_), do: true
 
   @doc """
   Outdents a line based on its index, raises if the line cannot be outdented.
