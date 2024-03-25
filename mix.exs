@@ -8,6 +8,7 @@ defmodule NestedLines.MixProject do
       elixir: "~> 1.16",
       start_permanent: Mix.env() == :prod,
       description: description(),
+      package: package(),
       aliases: aliases(),
       deps: deps()
     ]
@@ -33,6 +34,14 @@ defmodule NestedLines.MixProject do
 
   defp description do
     "A simple library to facilitate parsing line numbers into a common structure and enable indenting/outdenting/moving of lines."
+  end
+
+  defp package do
+    [
+      name: "nested_lines",
+      licenses: ["MIT"],
+      links: %{"GitHub" => "https://github.com/MBXSystems/nested_lines"}
+    ]
   end
 
   defp aliases do
