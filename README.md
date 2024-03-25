@@ -1,6 +1,13 @@
 # NestedLines
 
-A simple library to facilitate parsing line numbers into a common structure and enabling indenting/outdenting/moving of lines.
+[![Build Status](https://github.com/MBXSystems/simple_xml/workflows/CI/badge.svg)](https://github.com/MBXSystems/nested_lines/actions)
+[![Module Version](https://img.shields.io/hexpm/v/nested_lines.svg)](https://hex.pm/packages/nested_lines)
+[![Hex Docs](https://img.shields.io/badge/hex-docs-lightgreen.svg)](https://hexdocs.pm/nested_lines/)
+[![Total Download](https://img.shields.io/hexpm/dt/nested_lines.svg)](https://hex.pm/packages/nested_lines)
+[![License](https://img.shields.io/hexpm/l/nested_lines.svg)](https://github.com/MBXSystems/nested_lines/blob/master/LICENSE)
+[![Last Updated](https://img.shields.io/github/last-commit/MBXSystems/nested_lines.svg)](https://github.com/MBXSystems/simple_xml/commits/master)
+
+A simple library to facilitate parsing line numbers into a common structure and enable indenting/outdenting/moving of lines.
 
 ## Installation
 
@@ -17,7 +24,7 @@ end
 
 ## Usage
 
-For a given list of strings, use `NestedLines.new!/1` to parse the strings into a a `%NestedLines{}` struct.
+For a given list of strings, use `NestedLines.new!/1` to parse the strings into a `%NestedLines{}` struct.
 
 ```elixir
 lines = ["1", "2", "2.1", "2.2", "3", "3.1", "3.1.1"] |> NestedLines.new!()
@@ -35,7 +42,7 @@ With a `%NestedLines{}` stuct, you can then output the line numbers using `Neste
 
 💡 Use the optional second argument to start the lines at a different number.
 
-Use `NestedLines.indent!/2` and `NestedLines.outdent!/2` to indent and outdent lines provided they maintain a valid line structure. For example:
+Use `NestedLines.indent!/2` and `NestedLines.outdent!/2` to indent and outdent lines, provided they maintain a valid line structure. For example:
 
 ```elixir
 %NestedLines{lines: [[1], [1], [1]]} |> NestedLines.indent!(2)
@@ -46,7 +53,7 @@ Use `NestedLines.indent!/2` and `NestedLines.outdent!/2` to indent and outdent l
 # Here the line at position 2 CANNOT be indented further and will raise an ArgumentError
 ```
 
-Lines that have children can also be indented/outdented and their child lines will also indent/outdent by one position.
+Lines that have children can also be indented/outdented and their child lines will also indent/outdent accordingly by one position.
 
 ```elixir
 %NestedLines{lines: [[1], [0, 1], [0, 0, 1], [1]]} |> NestedLines.outdent!(2)
@@ -56,7 +63,24 @@ Lines that have children can also be indented/outdented and their child lines wi
 # ArgumentError
 ```
 
-### TODO
+## Contributing
 
-* Move lines between siblings
-* Move lines anywhere?
+We welcome merge requests for fixing issues or expanding functionality.
+
+Clone and compile with:
+
+```shell
+git clone https://github.com/MBXSystems/nested_lines.git
+cd nested_lines
+mix deps.get
+mix compile
+```
+
+Verify that tests and linting pass with your changes.
+
+```shell
+mix test
+mix lint
+```
+
+All code changes should be accompanied with unit tests.
