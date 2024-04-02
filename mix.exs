@@ -4,8 +4,8 @@ defmodule NestedLines.MixProject do
   def project do
     [
       app: :nested_lines,
-      version: "0.1.0",
-      elixir: "~> 1.16",
+      version: "0.1.1",
+      elixir: "~> 1.14",
       start_permanent: Mix.env() == :prod,
       description: description(),
       package: package(),
