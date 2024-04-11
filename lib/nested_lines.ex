@@ -205,4 +205,62 @@ defmodule NestedLines do
 
   defp outdent_lines(lines), do: Enum.map(lines, fn [0 | line] -> line end)
   defp indent_lines(lines), do: Enum.map(lines, &[0 | &1])
+
+  @doc """
+    Returns a tree representation of the input lines.
+
+  ## Examples
+
+      iex> %NestedLines{lines: [[1], [0, 1], [0, 0, 1], [0, 1]]} |> NestedLines.build_tree()
+      [%{children: [%{children: [%{children: [], line: "1.1.1"}], line: "1.1"}, %{children: [], line: "1.2"}], line: "1"}]
+
+      iex> %NestedLines{lines: [[1], [1], [0, 1]]} |> NestedLines.build_tree()
+      [%{children: [], line: "1"}, %{children: [%{children: [], line: "2.1"}], line: "2"}]
+  """
+  @spec build_tree(t) :: list(map())
+  def build_tree(%__MODULE__{} = nested_lines) do
+    nested_lines
+    |> line_numbers()
+    |> build_tree([])
+  end
+
+  @spec build_tree(list(String.t()), list(map())) :: list(map())
+  defp build_tree([], tree), do: Enum.reverse(tree)
+
+  defp build_tree([line | rest] = lines, tree)
+       when is_list(lines) and
+              is_list(tree) and is_binary(line) do
+    levels = String.split(line, ".")
+
+    case levels do
+      [_] ->
+        build_tree(rest, [%{line: line, children: []} | tree])
+
+      _ ->
+        updated_tree = add_to_parent(tree, line)
+        build_tree(rest, updated_tree)
+    end
+  end
+
+  @spec add_to_parent(list(map()), String.t()) :: list(map())
+  defp add_to_parent([], line) when is_binary(line), do: [%{line: line, children: []}]
+
+  defp add_to_parent([%{line: _} = latest_tree_line | rest], line)
+       when is_binary(line) do
+    line_levels = String.split(line, ".")
+    latest_tree_line_levels = String.split(latest_tree_line.line, ".")
+    line_parent_levels = Enum.take(line_levels, Enum.count(line_levels) - 1)
+
+    if latest_tree_line_levels == line_parent_levels do
+      updated_line =
+        Map.update!(latest_tree_line, :children, fn children ->
+          children ++ [%{line: line, children: []}]
+        end)
+
+      [updated_line | rest]
+    else
+      updated_tree_line = Map.update!(latest_tree_line, :children, &add_to_parent(&1, line))
+      [updated_tree_line | rest]
+    end
+  end
 end
