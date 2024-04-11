@@ -27,6 +27,11 @@ defmodule NestedLinesTest do
       input = NestedLines.new!(["1", "1.1", "1.2"])
       assert %NestedLines{lines: [[1], [0, 1], [0, 1]]} = input
     end
+
+    test "~W(1 1.00 1.01 1.02 1.03) returns [[1], [1], [0, 1], [0, 1], [0, 1]]" do
+      input = NestedLines.new!(["1", "1.00", "1.01", "1.02", "1.03"])
+      assert %NestedLines{lines: [[1], [1], [0, 1], [0, 1], [0, 1]]} = input
+    end
   end
 
   describe "parsing numeric values" do
