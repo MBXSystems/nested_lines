@@ -121,4 +121,35 @@ defmodule NestedLinesTest do
       assert %NestedLines{lines: [[1], [1], [0, 1]]} = NestedLines.outdent!(lines, 2)
     end
   end
+
+  describe "build_tree" do
+    test "with deeply nested children" do
+      lines = %NestedLines{lines: [[1], [1], [0, 1], [0, 1], [0, 0, 1], [0, 1]]}
+      assert [
+        %{line: "1", children: []},
+        %{
+          line: "2",
+          children: [
+            %{
+              line: "2.1",
+              children: []
+            },
+            %{
+              line: "2.2",
+              children: [
+                %{
+                  line: "2.2.1",
+                  children: []
+                }
+              ]
+            },
+            %{
+              line: "2.3",
+              children: []
+            }
+          ]
+        }
+      ] = NestedLines.build_tree(lines)
+    end
+  end
 end
