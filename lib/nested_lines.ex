@@ -241,9 +241,14 @@ defmodule NestedLines do
 
   ## Examples
 
-      iex> %NestedLines{lines: [[1], [0,1], [1], [0, 1], [0, 0, 1], [0, 1], [0, 0, 1]]} |> NestedLines.build_tree()
+      iex> %NestedLines{lines: [[1], [0, 1], [1], [0, 1], [0, 0, 1], [0, 1], [0, 0, 1]]} |> NestedLines.build_tree()
       [
-        %{line: "1", children: [%{line: "1.1", children: []}]},
+        %{
+          line: "1",
+          children: [
+            %{line: "1.1", children: []}
+          ]
+        },
         %{
           line: "2",
           children: [
