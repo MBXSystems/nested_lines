@@ -207,6 +207,36 @@ defmodule NestedLines do
   defp indent_lines(lines), do: Enum.map(lines, &[0 | &1])
 
   @doc """
+  Returns a boolean indicating if the line at the given position has children
+
+  Examples:
+
+      iex> %NestedLines{lines: [[1], [0, 1], [0, 0, 1]]} |> NestedLines.has_children?(1)
+      true
+
+      iex> %NestedLines{lines: [[1], [0, 1], [0, 0, 1]]} |> NestedLines.has_children?(2)
+      true
+
+      iex> %NestedLines{lines: [[1], [0, 1], [0, 0, 1]]} |> NestedLines.has_children?(3)
+      false
+
+      iex> %NestedLines{lines: [[1], [1], [0, 1], [0, 0, 1]]} |> NestedLines.has_children?(1)
+      false
+
+  """
+  @spec has_children?(t, pos_integer()) :: boolean()
+  def has_children?(%__MODULE__{lines: lines}, position)
+      when is_integer(position) and position > 0 do
+    lines
+    |> Enum.slice(position - 1, 2)
+    |> has_children?()
+  end
+
+  defp has_children?([_, [_]]), do: false
+  defp has_children?([_]), do: false
+  defp has_children?([_, _]), do: true
+
+  @doc """
     Returns a tree representation of the input lines.
 
   ## Examples
