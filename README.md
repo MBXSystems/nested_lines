@@ -77,12 +77,12 @@ Lines that have children can also be indented/outdented and their child lines wi
 ```
 
 
-Use `NestedLines.build_tree` for a representation of the lines as a nested struct. For example:
+Use `NestedLines.tree` for a representation of the lines as a nested struct. For example:
 
 ```elixir
 ["1", "1.1", "2"]
 |> NestedLines.new!()
-|> NestedLines.build_tree()
+|> NestedLines.tree()
 # [
 #  %{line: "1", children: [%{line: "1.1", children: []}]},
 #  %{line: "2", children: []}
