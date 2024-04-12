@@ -140,7 +140,7 @@ defmodule NestedLinesTest do
     end
   end
 
-  describe "build_tree" do
+  describe "tree" do
     test "with deeply nested children" do
       line_numbers = ["1", "2", "2.1", "2.2", "2.2.1", "2.3"]
       lines = NestedLines.new!(line_numbers)
@@ -169,7 +169,7 @@ defmodule NestedLinesTest do
                    }
                  ]
                }
-             ] = NestedLines.build_tree(lines)
+             ] = NestedLines.tree(lines)
     end
   end
 end

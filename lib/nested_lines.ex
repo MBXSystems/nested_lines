@@ -241,7 +241,8 @@ defmodule NestedLines do
 
   ## Examples
 
-      iex> NestedLines.new!(["1", "1.1", "2", "2.1", "2.1.1", "2.2", "2.2.1"]) |> NestedLines.build_tree()
+      iex> NestedLines.new!(["1", "1.1", "2", "2.1", "2.1.1", "2.2", "2.2.1"]) |> NestedLines.tree()
+
       [
         %{
           line: "1",
@@ -263,8 +264,8 @@ defmodule NestedLines do
         }
       ]
   """
-  @spec build_tree(t) :: list(map())
-  def build_tree(%__MODULE__{} = nested_lines) do
+  @spec tree(t) :: list(map())
+  def tree(%__MODULE__{} = nested_lines) do
     nested_lines
     |> line_numbers()
     |> build_tree([])
