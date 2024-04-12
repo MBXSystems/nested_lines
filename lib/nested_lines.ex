@@ -58,7 +58,7 @@ defmodule NestedLines do
 
   ## Examples
 
-      iex> %NestedLines{lines: [[1], [0, 1], [0, 1], [1], [0, 1], [0, 0, 1]]} |> NestedLines.line_numbers()
+      iex> NestedLines.new!(["1", "1.1", "1.2", "2", "2.1", "2.1.1"]) |> NestedLines.line_numbers()
       ["1", "1.1", "1.2", "2", "2.1", "2.1.1"]
 
   """
@@ -85,10 +85,10 @@ defmodule NestedLines do
 
   ## Examples
 
-      iex> %NestedLines{lines: [[1], [0, 1], [0, 1]]} |> NestedLines.can_indent?(1)
+      iex> NestedLines.new!(["1", "1.1", "1.2"]) |> NestedLines.can_indent?(1)
       false
 
-      iex> %NestedLines{lines: [[1], [0, 1], [0, 1]]} |> NestedLines.can_indent?(3)
+      iex> NestedLines.new!(["1", "1.1", "1.2"]) |> NestedLines.can_indent?(3)
       true
 
   """
@@ -109,8 +109,8 @@ defmodule NestedLines do
 
   ## Examples
 
-      iex> %NestedLines{lines: [[1], [1], [0, 1], [1]]} |> NestedLines.indent!(4)
-      %NestedLines{lines: [[1], [1], [0, 1], [0, 1]]}
+      iex> NestedLines.new!(["1", "2", "2.1", "3"]) |> NestedLines.indent!(4) |> NestedLines.line_numbers()
+      ["1", "2", "2.1", "2.2"]
 
   """
   @spec indent!(t, pos_integer()) :: t
@@ -142,13 +142,13 @@ defmodule NestedLines do
 
   ## Examples
 
-      iex> %NestedLines{lines: [[1], [0, 1], [0, 0, 1]]} |> NestedLines.can_outdent?(2)
+      iex> NestedLines.new!(["1", "1.1", "1.1.1"]) |> NestedLines.can_outdent?(2)
       true
 
-      iex> %NestedLines{lines: [[1], [0, 1], [1]]} |> NestedLines.can_outdent?(3)
+      iex> NestedLines.new!(["1", "1.1", "2"]) |> NestedLines.can_outdent?(3)
       false
 
-      iex> %NestedLines{lines: [[1], [1], [0, 1], [1]]} |> NestedLines.can_outdent?(3)
+      iex> NestedLines.new!(["1", "2", "2.1", "3"]) |> NestedLines.can_outdent?(3)
       true
 
   """
@@ -170,8 +170,8 @@ defmodule NestedLines do
 
   ## Examples
 
-      iex> %NestedLines{lines: [[1], [1], [0, 1], [0, 0, 1]]} |> NestedLines.outdent!(3)
-      %NestedLines{lines: [[1], [1], [1], [0, 1]]}
+      iex> NestedLines.new!(["1", "2", "2.1", "2.1.1"]) |> NestedLines.outdent!(3) |> NestedLines.line_numbers()
+      ["1", "2", "3", "3.1"]
 
   """
   def outdent!(%__MODULE__{lines: lines} = nested_lines, position)
@@ -211,16 +211,16 @@ defmodule NestedLines do
 
   Examples:
 
-      iex> %NestedLines{lines: [[1], [0, 1], [0, 0, 1]]} |> NestedLines.has_children?(1)
+      iex> NestedLines.new!(["1", "1.1", "1.1.1"]) |> NestedLines.has_children?(1)
       true
 
-      iex> %NestedLines{lines: [[1], [0, 1], [0, 0, 1]]} |> NestedLines.has_children?(2)
+      iex> NestedLines.new!(["1", "1.1", "1.1.1"]) |> NestedLines.has_children?(2)
       true
 
-      iex> %NestedLines{lines: [[1], [0, 1], [0, 0, 1]]} |> NestedLines.has_children?(3)
+      iex> NestedLines.new!(["1", "1.1", "1.1.1"]) |> NestedLines.has_children?(3)
       false
 
-      iex> %NestedLines{lines: [[1], [1], [0, 1], [0, 0, 1]]} |> NestedLines.has_children?(1)
+      iex>  NestedLines.new!(["1", "2", "2.1"])  |> NestedLines.has_children?(1)
       false
 
   """
@@ -241,7 +241,7 @@ defmodule NestedLines do
 
   ## Examples
 
-      iex> %NestedLines{lines: [[1], [0, 1], [1], [0, 1], [0, 0, 1], [0, 1], [0, 0, 1]]} |> NestedLines.build_tree()
+      iex> NestedLines.new!(["1", "1.1", "2", "2.1", "2.1.1", "2.2", "2.2.1"]) |> NestedLines.build_tree()
       [
         %{
           line: "1",
