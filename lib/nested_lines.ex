@@ -58,7 +58,7 @@ defmodule NestedLines do
 
   ## Examples
 
-      iex> %NestedLines{lines: [[1], [0, 1], [0, 1], [1], [0, 1], [0, 0, 1]]} |> NestedLines.line_numbers()
+      iex> NestedLines.new!(["1", "1.1", "1.2", "2", "2.1", "2.1.1"]) |> NestedLines.line_numbers()
       ["1", "1.1", "1.2", "2", "2.1", "2.1.1"]
 
   """
@@ -85,10 +85,10 @@ defmodule NestedLines do
 
   ## Examples
 
-      iex> %NestedLines{lines: [[1], [0, 1], [0, 1]]} |> NestedLines.can_indent?(1)
+      iex> NestedLines.new!(["1", "1.1", "1.2"]) |> NestedLines.can_indent?(1)
       false
 
-      iex> %NestedLines{lines: [[1], [0, 1], [0, 1]]} |> NestedLines.can_indent?(3)
+      iex> NestedLines.new!(["1", "1.1", "1.2"]) |> NestedLines.can_indent?(3)
       true
 
   """
@@ -109,8 +109,8 @@ defmodule NestedLines do
 
   ## Examples
 
-      iex> %NestedLines{lines: [[1], [1], [0, 1], [1]]} |> NestedLines.indent!(4)
-      %NestedLines{lines: [[1], [1], [0, 1], [0, 1]]}
+      iex> NestedLines.new!(["1", "2", "2.1", "3"]) |> NestedLines.indent!(4) |> NestedLines.line_numbers()
+      ["1", "2", "2.1", "2.2"]
 
   """
   @spec indent!(t, pos_integer()) :: t
@@ -142,13 +142,13 @@ defmodule NestedLines do
 
   ## Examples
 
-      iex> %NestedLines{lines: [[1], [0, 1], [0, 0, 1]]} |> NestedLines.can_outdent?(2)
+      iex> NestedLines.new!(["1", "1.1", "1.1.1"]) |> NestedLines.can_outdent?(2)
       true
 
-      iex> %NestedLines{lines: [[1], [0, 1], [1]]} |> NestedLines.can_outdent?(3)
+      iex> NestedLines.new!(["1", "1.1", "2"]) |> NestedLines.can_outdent?(3)
       false
 
-      iex> %NestedLines{lines: [[1], [1], [0, 1], [1]]} |> NestedLines.can_outdent?(3)
+      iex> NestedLines.new!(["1", "2", "2.1", "3"]) |> NestedLines.can_outdent?(3)
       true
 
   """
@@ -170,8 +170,8 @@ defmodule NestedLines do
 
   ## Examples
 
-      iex> %NestedLines{lines: [[1], [1], [0, 1], [0, 0, 1]]} |> NestedLines.outdent!(3)
-      %NestedLines{lines: [[1], [1], [1], [0, 1]]}
+      iex> NestedLines.new!(["1", "2", "2.1", "2.1.1"]) |> NestedLines.outdent!(3) |> NestedLines.line_numbers()
+      ["1", "2", "3", "3.1"]
 
   """
   def outdent!(%__MODULE__{lines: lines} = nested_lines, position)
@@ -205,4 +205,112 @@ defmodule NestedLines do
 
   defp outdent_lines(lines), do: Enum.map(lines, fn [0 | line] -> line end)
   defp indent_lines(lines), do: Enum.map(lines, &[0 | &1])
+
+  @doc """
+  Returns a boolean indicating if the line at the given position has children
+
+  Examples:
+
+      iex> NestedLines.new!(["1", "1.1", "1.1.1"]) |> NestedLines.has_children?(1)
+      true
+
+      iex> NestedLines.new!(["1", "1.1", "1.1.1"]) |> NestedLines.has_children?(2)
+      true
+
+      iex> NestedLines.new!(["1", "1.1", "1.1.1"]) |> NestedLines.has_children?(3)
+      false
+
+      iex>  NestedLines.new!(["1", "2", "2.1"])  |> NestedLines.has_children?(1)
+      false
+
+  """
+  @spec has_children?(t, pos_integer()) :: boolean()
+  def has_children?(%__MODULE__{lines: lines}, position)
+      when is_integer(position) and position > 0 do
+    lines
+    |> Enum.slice(position - 1, 2)
+    |> has_children?()
+  end
+
+  defp has_children?([_, [_]]), do: false
+  defp has_children?([_]), do: false
+  defp has_children?([_, _]), do: true
+
+  @doc """
+    Returns a tree representation of the input lines.
+
+  ## Examples
+
+      iex> NestedLines.new!(["1", "1.1", "2", "2.1", "2.1.1", "2.2", "2.2.1"]) |> NestedLines.tree()
+
+      [
+        %{
+          line: "1",
+          children: [
+            %{line: "1.1", children: []}
+          ]
+        },
+        %{
+          line: "2",
+          children: [
+            %{line: "2.1", children: [
+                %{line: "2.1.1", children: []}
+            ]},
+            %{line: "2.2", children: [
+                %{line: "2.2.1", children: []}
+              ]
+            }
+          ]
+        }
+      ]
+  """
+  @spec tree(t) :: list(map())
+  def tree(%__MODULE__{} = nested_lines) do
+    nested_lines
+    |> line_numbers()
+    |> build_tree([])
+  end
+
+  @spec build_tree(list(String.t()), list(map())) :: list(map())
+  defp build_tree([], tree), do: Enum.reverse(tree) |> Enum.map(&reverse_children/1)
+
+  defp build_tree([line | rest] = lines, tree)
+       when is_list(lines) and
+              is_list(tree) and is_binary(line) do
+    levels = String.split(line, ".")
+
+    case levels do
+      [_] ->
+        build_tree(rest, [%{line: line, children: []} | tree])
+
+      _ ->
+        updated_tree = add_to_parent(tree, line)
+        build_tree(rest, updated_tree)
+    end
+  end
+
+  @spec add_to_parent(list(map()), String.t()) :: list(map())
+  defp add_to_parent([], line) when is_binary(line), do: [%{line: line, children: []}]
+
+  defp add_to_parent([%{line: _} = latest_tree_line | rest], line)
+       when is_binary(line) do
+    line_levels = String.split(line, ".")
+    line_parent_levels = Enum.join(Enum.take(line_levels, Enum.count(line_levels) - 1), ".")
+
+    if latest_tree_line.line == line_parent_levels do
+      updated_line =
+        Map.update!(latest_tree_line, :children, fn children ->
+          [%{line: line, children: []} | children]
+        end)
+
+      [updated_line | rest]
+    else
+      updated_tree_line = Map.update!(latest_tree_line, :children, &add_to_parent(&1, line))
+      [updated_tree_line | rest]
+    end
+  end
+
+  defp reverse_children(%{line: line, children: children}) do
+    %{line: line, children: Enum.reverse(children) |> Enum.map(&reverse_children/1)}
+  end
 end
