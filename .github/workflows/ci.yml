@@ -58,3 +58,13 @@ jobs:
             lint-${{ env.cache-name }}-base-${{ matrix.elixirbase }}
             lint-${{ env.cache-name }}-base-
             lint-${{ env.cache-name }}-
+  publish:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    steps:
+      - name: Check out
+        uses: actions/checkout@v2
+      - name: Publish to Hex.pm
+        uses: erlangpack/github-action@v3
+        env:
+          HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
