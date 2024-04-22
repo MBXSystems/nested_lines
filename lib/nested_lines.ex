@@ -37,6 +37,7 @@ defmodule NestedLines do
   defp parse_input(line) when is_binary(line) do
     line
     |> String.split(".", trim: true)
+    |> remove_leading_zeros()
     |> convert_to_binary_list([])
   end
 
@@ -51,6 +52,13 @@ defmodule NestedLines do
 
   defp convert_to_binary_list([_head | tail], list) do
     convert_to_binary_list(tail, [0 | list])
+  end
+
+  @spec remove_leading_zeros(list(String.t())) :: list(String.t())
+  defp remove_leading_zeros(line) do
+    line
+    |> Enum.map(&String.replace_leading(&1, "0", ""))
+    |> Enum.reject(&(&1 == ""))
   end
 
   @doc """
