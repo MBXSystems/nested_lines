@@ -228,7 +228,10 @@ defmodule NestedLines do
       iex> NestedLines.new!(["1", "1.1", "1.1.1"]) |> NestedLines.has_children?(3)
       false
 
-      iex>  NestedLines.new!(["1", "2", "2.1"])  |> NestedLines.has_children?(1)
+      iex>  NestedLines.new!(["1", "2", "2.1"]) |> NestedLines.has_children?(1)
+      false
+
+      iex> NestedLines.new!(["1", "1.1", "1.2"]) |> NestedLines.has_children?(2)
       false
 
   """
@@ -242,7 +245,7 @@ defmodule NestedLines do
 
   defp has_children?([_, [_]]), do: false
   defp has_children?([_]), do: false
-  defp has_children?([_, _]), do: true
+  defp has_children?([a, b]), do: Enum.count(a) < Enum.count(b)
 
   @doc """
     Returns a tree representation of the input lines.
