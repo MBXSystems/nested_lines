@@ -16,6 +16,9 @@ defmodule NestedLines do
   @doc """
   Construct a nested line representation from a list of string values.
 
+  `nil` values in the input list do not have line numbers
+   nor do they affect the line numbering of subsequent lines.
+
   ## Examples
 
       iex> NestedLines.new!(["1", "1.1", "1.2", "2", "2.1"])
@@ -68,6 +71,9 @@ defmodule NestedLines do
 
   @doc """
   Output a string representation of the line numbers.
+
+  `nil` values in the input list are preserved in the output
+  and do not affect the line numbering of subsequent lines.
 
   ## Examples
 
