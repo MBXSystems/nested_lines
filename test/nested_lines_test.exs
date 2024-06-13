@@ -3,12 +3,12 @@ defmodule NestedLinesTest do
   doctest NestedLines
 
   describe "parsing nil values" do
-    test "nil values return [[1]]" do
+    test "nil values return []" do
       input1 = NestedLines.new!([nil])
-      assert %NestedLines{lines: [[1]]} = input1
+      assert %NestedLines{lines: [[]]} = input1
 
       input2 = NestedLines.new!(["1", nil, "2"])
-      assert %NestedLines{lines: [[1], [1], [1]]} = input2
+      assert %NestedLines{lines: [[1], [], [1]]} = input2
     end
   end
 
@@ -36,14 +36,11 @@ defmodule NestedLinesTest do
 
   describe "parsing numeric values" do
     test "numeric values return [[1]]" do
-      input = NestedLines.new!([nil])
-      assert %NestedLines{lines: [[1]]} = input
+      input = NestedLines.new!(["1", 1, "2"])
+      assert %NestedLines{lines: [[1], [1], [1]]} = input
 
-      input2 = NestedLines.new!(["1", 1, "2"])
-      assert %NestedLines{lines: [[1], [1], [1]]} = input2
-
-      input3 = NestedLines.new!(["1", 1.1, "2", 2.1])
-      assert %NestedLines{lines: [[1], [0, 1], [1], [0, 1]]} = input3
+      input1 = NestedLines.new!(["1", 1.1, "2", 2.1])
+      assert %NestedLines{lines: [[1], [0, 1], [1], [0, 1]]} = input1
     end
   end
 
@@ -58,6 +55,11 @@ defmodule NestedLinesTest do
       assert ["1", "1.1", "2"] = NestedLines.line_numbers(lines)
     end
 
+    test "skipped line numbers" do
+      lines = NestedLines.new!(["1", nil, "3", "4"])
+      assert ["1", nil, "2", "3"] = NestedLines.line_numbers(lines)
+    end
+
     test "line numbers with grandchildren" do
       lines = NestedLines.new!(["1", "1.1", "2", "3", "3.1", "3.1.1", "4"])
       assert ["1", "1.1", "2", "3", "3.1", "3.1.1", "4"] = NestedLines.line_numbers(lines)
@@ -66,6 +68,11 @@ defmodule NestedLinesTest do
     test "return line numbers with other starting number" do
       lines = NestedLines.new!(["1", "1.1", "2"])
       assert ["10", "10.1", "11"] = NestedLines.line_numbers(lines, 10)
+    end
+
+    test "skipped nested line numbers" do
+      lines = NestedLines.new!(["1", "1.1", nil, "1.3", "2", "2.1"])
+      assert ["1", "1.1", nil, "1.2", "2", "2.1"] = NestedLines.line_numbers(lines)
     end
 
     test "fail if starting_number less than 1" do
@@ -83,6 +90,14 @@ defmodule NestedLinesTest do
 
       assert ["1", "1.1", "2"] =
                NestedLines.indent!(lines, 2)
+               |> NestedLines.line_numbers()
+    end
+
+    test "indent one level with skipped line" do
+      lines = NestedLines.new!(["1", nil, "3"])
+
+      assert ["1", nil, "1.1"] =
+               NestedLines.indent!(lines, 3)
                |> NestedLines.line_numbers()
     end
 
@@ -145,9 +160,62 @@ defmodule NestedLinesTest do
     end
   end
 
+  describe "has_children?" do
+    test "with children" do
+      has_children = NestedLines.new!(["1", "1.1", "2"]) |> NestedLines.has_children?(1)
+      assert has_children
+    end
+
+    test "with grandchildren" do
+      has_children = NestedLines.new!(["1", "1.1", "1.1.1"]) |> NestedLines.has_children?(2)
+      assert has_children
+    end
+
+    test "with the last element of the list" do
+      has_children = NestedLines.new!(["1", "1.1", "1.1.1"]) |> NestedLines.has_children?(3)
+      assert !has_children
+    end
+
+    test "with a skipped line" do
+      has_children = NestedLines.new!(["1", nil, "2"]) |> NestedLines.has_children?(2)
+      assert !has_children
+    end
+  end
+
   describe "tree" do
     test "with deeply nested children" do
       line_numbers = ["1", "2", "2.1", "2.2", "2.2.1", "2.3"]
+      lines = NestedLines.new!(line_numbers)
+
+      assert [
+               %{line: "1", children: []},
+               %{
+                 line: "2",
+                 children: [
+                   %{
+                     line: "2.1",
+                     children: []
+                   },
+                   %{
+                     line: "2.2",
+                     children: [
+                       %{
+                         line: "2.2.1",
+                         children: []
+                       }
+                     ]
+                   },
+                   %{
+                     line: "2.3",
+                     children: []
+                   }
+                 ]
+               }
+             ] = NestedLines.tree(lines)
+    end
+
+    test "with skipped lines" do
+      line_numbers = ["1", "2", "2.1", nil, "2.2", "2.2.1", "2.3", nil]
       lines = NestedLines.new!(line_numbers)
 
       assert [

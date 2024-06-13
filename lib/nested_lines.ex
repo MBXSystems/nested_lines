@@ -16,10 +16,16 @@ defmodule NestedLines do
   @doc """
   Construct a nested line representation from a list of string values.
 
+  `nil` values in the input list do not have line numbers
+   nor do they affect the line numbering of subsequent lines.
+
   ## Examples
 
       iex> NestedLines.new!(["1", "1.1", "1.2", "2", "2.1"])
       %NestedLines{lines: [[1], [0, 1], [0, 1], [1], [0, 1]]}
+
+      iex> NestedLines.new!(["1", "1.1", nil, "1.2", "2"])
+      %NestedLines{lines: [[1], [0, 1], [], [0, 1], [1]]}
 
   """
   @spec new!(list(String.t() | non_neg_integer())) :: t
@@ -40,6 +46,8 @@ defmodule NestedLines do
     |> remove_leading_zeros()
     |> convert_to_binary_list([])
   end
+
+  defp parse_input(nil), do: []
 
   defp parse_input(_), do: [1]
 
@@ -64,10 +72,16 @@ defmodule NestedLines do
   @doc """
   Output a string representation of the line numbers.
 
+  `nil` values in the input list are preserved in the output
+  and do not affect the line numbering of subsequent lines.
+
   ## Examples
 
       iex> NestedLines.new!(["1", "1.1", "1.2", "2", "2.1", "2.1.1"]) |> NestedLines.line_numbers()
       ["1", "1.1", "1.2", "2", "2.1", "2.1.1"]
+
+      iex> NestedLines.new!(["1", "1.1", nil, "1.3", "2", "2.1"]) |> NestedLines.line_numbers()
+      ["1", "1.1", nil, "1.2", "2", "2.1"]
 
   """
   @spec line_numbers(t, pos_integer()) :: list(String.t())
@@ -78,15 +92,24 @@ defmodule NestedLines do
   defp build_line_numbers([], _prev, output), do: join_line_numbers(output)
 
   defp build_line_numbers([current | rest], prev, output) do
-    next =
-      current
-      |> Enum.zip(prev ++ [0])
-      |> Enum.map(fn {a, b} -> a + b end)
+    if current == [] do
+      build_line_numbers(rest, prev, output ++ [[]])
+    else
+      next =
+        current
+        |> Enum.zip(prev ++ [0])
+        |> Enum.map(fn {a, b} -> a + b end)
 
-    build_line_numbers(rest, next, output ++ [next])
+      build_line_numbers(rest, next, output ++ [next])
+    end
   end
 
-  defp join_line_numbers(line_numbers), do: Enum.map(line_numbers, &Enum.join(&1, "."))
+  defp join_line_numbers(line_numbers) do
+    Enum.map(line_numbers, fn
+      [] -> nil
+      line -> Enum.join(line, ".")
+    end)
+  end
 
   @doc """
   Returns true if the line can be indented, false otherwise. Lines are 1-indexed.
@@ -99,16 +122,23 @@ defmodule NestedLines do
       iex> NestedLines.new!(["1", "1.1", "1.2"]) |> NestedLines.can_indent?(3)
       true
 
+      iex> NestedLines.new!(["1", nil, "1.1", "1.2"]) |> NestedLines.can_indent?(2)
+      false
+
+      iex> NestedLines.new!(["1", nil, "1.1", "1.2"]) |> NestedLines.can_indent?(4)
+      true
+
   """
   @spec can_indent?(t, pos_integer()) :: boolean()
   def can_indent?(%__MODULE__{lines: lines}, position)
       when is_integer(position) and position > 0 do
     lines
-    |> Enum.slice(position - 2, 2)
+    |> previous_and_current_line(position)
     |> can_indent?()
   end
 
-  defp can_indent?([prev, next]) when length(prev) >= length(next), do: true
+  defp can_indent?([_, []]), do: false
+  defp can_indent?([prev, current]) when length(prev) >= length(current), do: true
   defp can_indent?(_), do: false
 
   @doc """
@@ -119,6 +149,12 @@ defmodule NestedLines do
 
       iex> NestedLines.new!(["1", "2", "2.1", "3"]) |> NestedLines.indent!(4) |> NestedLines.line_numbers()
       ["1", "2", "2.1", "2.2"]
+
+      iex> NestedLines.new!(["1", "2", "2.1", nil, "2.2"]) |> NestedLines.indent!(5) |> NestedLines.line_numbers()
+      ["1", "2", "2.1", nil, "2.1.1"]
+
+      iex> NestedLines.new!(["1", "2", "3", nil, "3.1"]) |> NestedLines.indent!(3) |> NestedLines.line_numbers()
+      ["1", "2", "2.1", nil, "2.1.1"]
 
   """
   @spec indent!(t, pos_integer()) :: t
@@ -159,17 +195,25 @@ defmodule NestedLines do
       iex> NestedLines.new!(["1", "2", "2.1", "3"]) |> NestedLines.can_outdent?(3)
       true
 
+      iex> NestedLines.new!(["1", nil, "2", "2.1"]) |> NestedLines.can_outdent?(4)
+      true
+
+      iex> NestedLines.new!(["1", nil, "2", "2.1"]) |> NestedLines.can_outdent?(2)
+      false
+
   """
   @spec can_outdent?(t, pos_integer()) :: boolean()
   def can_outdent?(%__MODULE__{lines: lines}, position)
       when is_integer(position) and position > 0 do
     lines
-    |> Enum.slice(position - 1, 2)
+    |> current_and_next_line(position)
     |> can_outdent?()
   end
 
   defp can_outdent?([[1], _next]), do: false
   defp can_outdent?([[1]]), do: false
+  defp can_outdent?([[], _next]), do: false
+  defp can_outdent?([[]]), do: false
   defp can_outdent?(_), do: true
 
   @doc """
@@ -180,6 +224,9 @@ defmodule NestedLines do
 
       iex> NestedLines.new!(["1", "2", "2.1", "2.1.1"]) |> NestedLines.outdent!(3) |> NestedLines.line_numbers()
       ["1", "2", "3", "3.1"]
+
+      iex> NestedLines.new!(["1", "2", "2.1", nil, "2.1.1"]) |> NestedLines.outdent!(3) |> NestedLines.line_numbers()
+      ["1", "2", "3", nil, "3.1"]
 
   """
   def outdent!(%__MODULE__{lines: lines} = nested_lines, position)
@@ -208,11 +255,26 @@ defmodule NestedLines do
   end
 
   defp split_child_lines(lines, parent_length) do
-    Enum.split_while(lines, fn line -> length(line) > parent_length end)
+    Enum.split_while(lines, fn line ->
+      line |> Enum.count() > parent_length or line == []
+    end)
   end
 
-  defp outdent_lines(lines), do: Enum.map(lines, fn [0 | line] -> line end)
-  defp indent_lines(lines), do: Enum.map(lines, &[0 | &1])
+  defp outdent_lines(lines) do
+    lines
+    |> Enum.map(fn
+      [0 | line] -> line
+      [] = line -> line
+    end)
+  end
+
+  defp indent_lines(lines) do
+    lines
+    |> Enum.map(fn
+      line = [] -> line
+      line -> [0 | line]
+    end)
+  end
 
   @doc """
   Returns a boolean indicating if the line at the given position has children
@@ -239,10 +301,12 @@ defmodule NestedLines do
   def has_children?(%__MODULE__{lines: lines}, position)
       when is_integer(position) and position > 0 do
     lines
-    |> Enum.slice(position - 1, 2)
+    |> current_and_next_line(position)
     |> has_children?()
   end
 
+  defp has_children?([[], _next]), do: false
+  defp has_children?([[]]), do: false
   defp has_children?([_, [_]]), do: false
   defp has_children?([_]), do: false
   defp has_children?([a, b]), do: Enum.count(a) < Enum.count(b)
@@ -279,6 +343,7 @@ defmodule NestedLines do
   def tree(%__MODULE__{} = nested_lines) do
     nested_lines
     |> line_numbers()
+    |> Enum.filter(fn line -> line != nil end)
     |> build_tree([])
   end
 
@@ -323,5 +388,38 @@ defmodule NestedLines do
 
   defp reverse_children(%{line: line, children: children}) do
     %{line: line, children: Enum.reverse(children) |> Enum.map(&reverse_children/1)}
+  end
+
+  @spec previous_and_current_line([line()], pos_integer()) :: [line()]
+  defp previous_and_current_line(lines, position) do
+    current_line = Enum.at(lines, position - 1)
+
+    previous_line =
+      lines
+      |> Enum.take(position - 1)
+      |> Enum.reject(fn line -> line == [] end)
+      |> Enum.reverse()
+      |> Enum.at(0)
+
+    case previous_line do
+      nil -> [current_line]
+      _ -> [previous_line, current_line]
+    end
+  end
+
+  @spec current_and_next_line([line()], pos_integer()) :: [line()]
+  defp current_and_next_line(lines, position) do
+    non_empty_trailing_lines =
+      lines
+      |> Enum.drop(position)
+      |> Enum.reject(fn line -> line == [] end)
+
+    current_line = Enum.at(lines, position - 1)
+    next_line = Enum.at(non_empty_trailing_lines, 0)
+
+    case next_line do
+      nil -> [current_line]
+      _ -> [current_line, next_line]
+    end
   end
 end
