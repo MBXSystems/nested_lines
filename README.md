@@ -33,6 +33,22 @@ For a given list of strings, use `NestedLines.new!/1` to parse the strings into 
 # %NestedLines{lines: [[1], [1], [0, 1], [0, 1], [1], [0, 1], [0, 0, 1]]}
 ```
 
+Use `NestedLines.new/1` for return values of `{:ok, %NestedLines{}}` or `{:error, :message}`
+
+```elixir
+["1", "2", "2.1"]
+|> NestedLines.new()
+
+# {:ok, %NestedLines{lines: [[1], [1], [0, 1]}}
+```
+
+```elixir
+["1.1", "1.2"]
+|> NestedLines.new()
+
+# {:error, :invalid_initial_line_nesting}
+```
+
 With a `%NestedLines{}` stuct, you can then output the line numbers using `NestedLines.line_numbers/2`
 
 ```elixir

@@ -36,6 +36,48 @@ defmodule NestedLines do
 
   def new!(_), do: raise(ArgumentError, "cannot build NestedLines, invalid input")
 
+  @doc """
+  Construct a nested line representation from a list of string values.
+  Returns `{:ok, %NestedLines{}}` if the input is valid, otherwise
+  returns `{:error, :invalid_inputs_empty}` if the input list is empty,
+  `{:error, :invalid_initial_line_nesting}` if the first line is indented,
+  or `{:error, :invalid_list}` if the input is not a list.
+
+  ## Examples
+
+      iex> NestedLines.new(["1", "1.1", "1.2", "2", "2.1"])
+      {:ok, %NestedLines{lines: [[1], [0, 1], [0, 1], [1], [0, 1]]}}
+
+      iex> NestedLines.new(["1.1", "1.2", "2.0", "2.1"])
+      {:error, :invalid_initial_line_nesting}
+
+      iex> NestedLines.new([])
+      {:error, :invalid_inputs_empty}
+
+      iex> NestedLines.new("1.1")
+      {:error, :invalid_list}
+  """
+  @spec new(list(String.t() | non_neg_integer())) :: {:ok, t()} | {:error, atom()}
+  def new(line_input) when is_list(line_input) do
+    lines = Enum.map(line_input, &parse_input/1)
+
+    case lines do
+      [] ->
+        {:error, :invalid_inputs_empty}
+
+      [[_] | _] ->
+        {:ok, %__MODULE__{lines: lines}}
+
+      [[0 | _] | _] ->
+        {:error, :invalid_initial_line_nesting}
+
+      _ ->
+        {:error, :invalid_nested_line_inputs}
+    end
+  end
+
+  def new(_), do: {:error, :invalid_list}
+
   @spec parse_input(any()) :: line()
 
   defp parse_input(line) when is_number(line), do: to_string(line) |> parse_input()
