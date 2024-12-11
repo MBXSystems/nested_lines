@@ -2,6 +2,51 @@ defmodule NestedLinesTest do
   use ExUnit.Case
   doctest NestedLines
 
+  describe "new" do
+    test "with valid inputs" do
+      nested1 = NestedLines.new(["1", "2", "3"])
+      assert {:ok, %NestedLines{lines: [[1], [1], [1]]}} = nested1
+
+      nested2 = NestedLines.new(["1", "1.1", "2"])
+      assert {:ok, %NestedLines{lines: [[1], [0, 1], [1]]}} = nested2
+
+      nested3 = NestedLines.new(["1", "1.1", "1.1.1", "2"])
+      assert {:ok, %NestedLines{lines: [[1], [0, 1], [0, 0, 1], [1]]}} = nested3
+    end
+
+    test "with invalid inputs -- initial line with bad nesting" do
+      nested = NestedLines.new(["1.1", "1.2", "2.0", "2.1"])
+      assert {:error, :invalid_initial_line_nesting} = nested
+    end
+
+    test "with invalid inputs -- non-initial line with bad nesting" do
+      # We're allowing this to pass, and the line 2.1 and it's siblings
+      # get absorbed into the previous parent line's children.
+      nested3 = NestedLines.new(["1", "1.1", "2.1", "2.2"])
+      assert {:ok, %NestedLines{lines: [[1], [0, 1], [0, 1], [0, 1]]} = res} = nested3
+      assert res |> NestedLines.line_numbers() == ["1", "1.1", "1.2", "1.3"]
+    end
+
+    test "with invalid inputs - empty list" do
+      assert {:error, :invalid_inputs_empty} = NestedLines.new([])
+    end
+
+    test "with invalid inputs - bad input type" do
+      assert {:error, :invalid_list} = NestedLines.new("1.1")
+    end
+
+    test "with invalid inputs - [\"0\"]" do
+      # We strip leading zeroes, so this turns into an empty list
+      assert {:error, :invalid_nested_line_inputs} = NestedLines.new(["0"])
+    end
+
+    test "with invalid inputs - [\"0.1\"]" do
+      # We strip leading zeroes, so this turns into line "1"
+      assert {:ok, %NestedLines{lines: [[1]]} = res} = NestedLines.new(["0.1"])
+      assert res |> NestedLines.line_numbers() == ["1"]
+    end
+  end
+
   describe "parsing nil values" do
     test "nil values return []" do
       input1 = NestedLines.new!([nil])
